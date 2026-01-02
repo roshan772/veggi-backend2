@@ -16,11 +16,13 @@ const app = express();
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: process.env.FRONTEND_URL
+      ? [process.env.FRONTEND_URL, "http://localhost:5173"]
+      : "http://localhost:5173", // Edited: Array for prod (Vercel) + dev; split if comma-separated
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    optionsSuccessStatus: 200, // ← This ensures preflight succeeds (common 404 fix)
+    optionsSuccessStatus: 200,
   })
 );
 
