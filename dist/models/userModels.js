@@ -1,0 +1,116 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const mongoose_1 = __importStar(require("mongoose"));
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const crypto_1 = __importDefault(require("crypto"));
+const UserSchema = new mongoose_1.Schema({
+    name: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    email: {
+        type: String,
+        required: [true, "Email is required"],
+        unique: true,
+        lowercase: true,
+        validate: {
+            validator: function (value) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return emailRegex.test(value);
+            },
+            message: "Please enter a valid email address",
+        },
+    },
+    password: {
+        type: String,
+        required: true,
+        minlength: 6,
+        select: false,
+    },
+    role: {
+        type: String,
+        enum: ["user", "admin"],
+        default: "user",
+    },
+    avatar: {
+        public_id: {
+            type: String,
+            default: "",
+        },
+        url: {
+            type: String,
+            default: "https://res.cloudinary.com/default-image/avatar_placeholder.png",
+        },
+    },
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
+}, { timestamps: true });
+// Hash password before save
+UserSchema.pre("save", async function (next) {
+    if (!this.isModified("password"))
+        return next();
+    const salt = await bcryptjs_1.default.genSalt(10);
+    this.password = await bcryptjs_1.default.hash(this.password, salt);
+    next();
+});
+// In src/models/userModels.ts - Updated getSignedJwtToken method
+UserSchema.methods.getSignedJwtToken = function () {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+        throw new Error("JWT_SECRET environment variable is not defined");
+    }
+    return jsonwebtoken_1.default.sign({ id: this._id }, secret, {
+        expiresIn: process.env.JWT_EXPIRE || "7d",
+    });
+};
+// Instance method to compare password
+UserSchema.methods.comparePassword = async function (candidate) {
+    return await bcryptjs_1.default.compare(candidate, this.password);
+};
+// Generate and hash reset password token
+UserSchema.methods.getResetPasswordToken = function () {
+    const resetToken = crypto_1.default.randomBytes(20).toString('hex');
+    this.resetPasswordToken = crypto_1.default.createHash('sha256').update(resetToken).digest('hex');
+    this.resetPasswordExpire = new Date(Date.now() + 30 * 60 * 1000);
+    return resetToken;
+};
+const User = mongoose_1.default.model("User", UserSchema);
+exports.default = User;
