@@ -48,12 +48,14 @@ app.use(cookieParser());
 app.use(
   "/uploads",
   express.static(path.join(__dirname, "../uploads"), {
-    setHeaders: (res, path) => {
-      res.set("Access-Control-Allow-Origin", "http://localhost:5173"); // Frontend origin
+    setHeaders: (res) => {
+      const origin = process.env.FRONTEND_URL || "http://localhost:5173";
+      res.set("Access-Control-Allow-Origin", origin);
       res.set("Access-Control-Allow-Methods", "GET");
     },
   })
 );
+
 
 /* ---------------- ROUTES ---------------- */
 app.use("/api/v1/products", productRoutes);
