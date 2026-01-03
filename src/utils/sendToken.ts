@@ -7,8 +7,8 @@ export const sendToken = (user: IUser, statusCode: number, res: Response) => {
 
   const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict" as const,
+    secure: true,
+    sameSite: "none" as const,
     expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
   };
 
