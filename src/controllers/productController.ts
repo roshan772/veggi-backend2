@@ -58,11 +58,11 @@ export const createProduct = asyncHandler(
       throw new AppError("Please upload at least one image", 400);
     }
 
-    // Cloudinary URL is in file.path
     const imageUrls = files.map((file) => ({
       image: file.path,
-      public_id: file.filename, // ✅ will be set now
+      public_id: file.filename || file.public_id, // ✅ CHANGED: fallback if filename is missing
     }));
+
     if (imageUrls.some((img) => !img.public_id)) {
       console.log("FILES DEBUG:", files[0]);
       throw new AppError(
@@ -70,7 +70,6 @@ export const createProduct = asyncHandler(
         500
       );
     }
-
 
     const product = await Product.create({
       ...body,
@@ -108,7 +107,6 @@ export const updateProduct = asyncHandler(
     const body = req.body;
     const files = req.files as any[];
 
-
     let updatedImages: any[] = [];
 
     if (existingProduct.images && Array.isArray(existingProduct.images)) {
@@ -116,11 +114,10 @@ export const updateProduct = asyncHandler(
     }
 
     // Add new uploaded images
-    // Add new uploaded images
     if (files && files.length > 0) {
       const newImages = files.map((file) => ({
-        image: file.path, // ✅ Cloudinary URL
-        public_id: file.filename, // ✅ Cloudinary public_id (usually)
+        image: file.path,
+        public_id: file.filename || file.public_id, // ✅ CHANGED: fallback if filename is missing
       }));
       updatedImages = [...updatedImages, ...newImages];
     }
