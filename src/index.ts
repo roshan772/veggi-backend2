@@ -14,11 +14,12 @@ import paymentRoutes from "./routes/paymentRoutes";
 dotenv.config();
 const app = express();
 
+/* ---------------- CORS ---------------- */
 app.use(
   cors({
     origin: process.env.FRONTEND_URL
       ? [process.env.FRONTEND_URL, "http://localhost:5173"]
-      : "http://localhost:5173", // Edited: Array for prod (Vercel) + dev; split if comma-separated
+      : "http://localhost:5173", 
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -26,11 +27,12 @@ app.use(
   })
 );
 
+/* ---------------- BODY PARSERS ---------------- */
 app.use(express.json({ limit: "10mb" })); // JSON bodies (existing)
 app.use(express.urlencoded({ extended: true, limit: "10mb" })); // ← Form-encoded bodies (new - prevents req.body undefined)
 app.use(cookieParser());
 
-// Edited: Serve uploads with CORS (key fix - allows frontend to fetch images)
+/* ---------------- STATIC FILES ---------------- */
 app.use(
   "/uploads",
   express.static(path.join(__dirname, "../uploads"), {
@@ -41,22 +43,43 @@ app.use(
   })
 );
 
+/* ---------------- ROUTES ---------------- */
 app.use("/api/v1/products", productRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/order", orderRoutes);
 app.use("/api/v1/payments", paymentRoutes);
 
-app.use(errorHandler);
-// Connect to MongoDB
-mongoose
-  .connect(process.env.MONGO_URI as string)
-  .then(() => console.log("MongoDB Connected"))
-  .catch((err) => `Mongo DB Connection Fail ${err}`);
 
-// Start Server
-const PORT = process.env.PORT || 8000
-app.listen(PORT, () => {
-  console.log(
-    `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV}`
-  );
+/* ---------------- HEALTH CHECK (IMPORTANT) ---------------- */
+app.get("/", (_req, res) => {
+  res.status(200).send("API is running");
 });
+
+/* ---------------- ERROR HANDLER ---------------- */
+app.use(errorHandler);
+
+/* ---------------- START SERVER SAFELY ---------------- */
+const startServer = async () => {
+  try {
+    if (!process.env.MONGO_URI) {
+      throw new Error("MONGO_URI is not defined");
+    }
+
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("MongoDB Connected");
+
+    const PORT = process.env.PORT;
+    if (!PORT) {
+      throw new Error("PORT not provided by Railway");
+    }
+
+    app.listen(Number(PORT), "0.0.0.0", () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Startup failed:", error);
+    process.exit(1); // 🔥 REQUIRED for Railway
+  }
+};
+
+startServer();
