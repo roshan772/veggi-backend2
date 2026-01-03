@@ -60,10 +60,17 @@ export const createProduct = asyncHandler(
 
     // Cloudinary URL is in file.path
     const imageUrls = files.map((file) => ({
-      image: file.path, // ✅ hosted Cloudinary URL
-      // optional: store public_id too (see below)
-      public_id: file.filename, // multer-storage-cloudinary sets filename = public_id
+      image: file.path,
+      public_id: file.filename, // ✅ will be set now
     }));
+    if (imageUrls.some((img) => !img.public_id)) {
+      console.log("FILES DEBUG:", files[0]);
+      throw new AppError(
+        "Cloudinary upload missing public_id (check uploadCloudinary middleware)",
+        500
+      );
+    }
+
 
     const product = await Product.create({
       ...body,
@@ -99,7 +106,8 @@ export const updateProduct = asyncHandler(
     if (!existingProduct) throw new AppError("Product not found", 404);
 
     const body = req.body;
-    const files = req.files as Express.Multer.File[];
+    const files = req.files as any[];
+
 
     let updatedImages: any[] = [];
 
