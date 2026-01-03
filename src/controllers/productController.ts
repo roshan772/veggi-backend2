@@ -52,14 +52,17 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
 export const createProduct = asyncHandler(
   async (req: Request, res: Response) => {
     const body = req.body;
-    const files = req.files as Express.Multer.File[];
+    const files = req.files as any[]; // Cloudinary adds fields, so "any" is easiest
 
     if (!files || files.length === 0) {
       throw new AppError("Please upload at least one image", 400);
     }
 
+    // Cloudinary URL is in file.path
     const imageUrls = files.map((file) => ({
-      image: `/uploads/products/${file.filename}`,
+      image: file.path, // ✅ hosted Cloudinary URL
+      // optional: store public_id too (see below)
+      public_id: file.filename, // multer-storage-cloudinary sets filename = public_id
     }));
 
     const product = await Product.create({
@@ -74,6 +77,7 @@ export const createProduct = asyncHandler(
     });
   }
 );
+
 
 //Get Single Products : http://localhost:8000/api/v1/products/691dca3211e215063266d38a
 export const getSingleProduct = asyncHandler(
@@ -104,9 +108,11 @@ export const updateProduct = asyncHandler(
     }
 
     // Add new uploaded images
+    // Add new uploaded images
     if (files && files.length > 0) {
       const newImages = files.map((file) => ({
-        image: `/uploads/products/${file.filename}`,
+        image: file.path, // ✅ Cloudinary URL
+        public_id: file.filename, // ✅ Cloudinary public_id (usually)
       }));
       updatedImages = [...updatedImages, ...newImages];
     }

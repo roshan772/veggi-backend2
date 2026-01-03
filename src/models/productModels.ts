@@ -5,7 +5,7 @@ export interface IProduct extends Document {
   price: number;
   description: string;
   ratings: number;
-  images: { image: string }[];
+  images: { image: string; public_id: string }[];
   category: string;
   unitType: "kg" | "g" | "piece" | "bunch";
   stock: number;
@@ -49,10 +49,11 @@ const productSchema = new Schema<IProduct>({
   images: {
     type: [
       {
-        image: { type: String, required: true },
+        image: { type: String, required: true }, // Cloudinary URL
+        public_id: { type: String, required: true }, // Cloudinary public id
       },
     ],
-    default: [], // ← IMPORTANT FIX
+    default: [],
   },
 
   category: {

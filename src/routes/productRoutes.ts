@@ -2,6 +2,7 @@ import { Router } from "express";
 import * as ctrl from "../controllers/productController";
 import { protect, authorizeRoles } from "../middlewares/authenticate";
 import { upload } from "../middlewares/upload";
+import { uploadCloudinary } from "../middlewares/uploadCloudinary";
 
 const router = Router();
 //app.use("/api/v1/products" , productRoutes)
@@ -15,7 +16,7 @@ router.post(
   "/new",
   protect,
   authorizeRoles("admin"),
-  upload.array("images", 5),
+  uploadCloudinary.array("images", 5),
   ctrl.createProduct
 );
 router.get("/:id", ctrl.getSingleProduct);

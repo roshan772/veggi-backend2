@@ -14,11 +14,11 @@ import {
   deleteUser,
 } from "../controllers/authController";
 import { protect, authorizeRoles } from "../middlewares/authenticate";
-import { upload } from "../middlewares/upload";
+import { uploadCloudinary } from "../middlewares/uploadCloudinary";
 
 const router = Router();
 
-router.post("/register", upload.single("avatar"), register);
+router.post("/register", uploadCloudinary.single("avatar"), register);
 router.post("/login", login);
 router.post("/logout", logout);
 
