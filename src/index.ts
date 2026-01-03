@@ -11,7 +11,7 @@ import orderRoutes from "./routes/orderRoutes";
 import path from "path";
 import paymentRoutes from "./routes/paymentRoutes";
 
-dotenv.config({ path: "./src/config/config.env" });
+dotenv.config();
 const app = express();
 
 app.use(
@@ -54,7 +54,8 @@ mongoose
   .catch((err) => `Mongo DB Connection Fail ${err}`);
 
 // Start Server
-app.listen(process.env.PORT, () => {
+const PORT = process.env.PORT || 8000
+app.listen(PORT, () => {
   console.log(
     `Server is running on port ${process.env.PORT} in ${process.env.NODE_ENV}`
   );
