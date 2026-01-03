@@ -1,7 +1,6 @@
 import { Router } from "express";
 import * as ctrl from "../controllers/productController";
 import { protect, authorizeRoles } from "../middlewares/authenticate";
-import { upload } from "../middlewares/upload";
 import { uploadCloudinary } from "../middlewares/uploadCloudinary";
 
 const router = Router();
@@ -20,12 +19,18 @@ router.post(
   ctrl.createProduct
 );
 router.get("/:id", ctrl.getSingleProduct);
-router.put("/:id", protect, authorizeRoles("admin"), ctrl.updateProduct);
+router.put(
+  "/:id",
+  protect,
+  authorizeRoles("admin"),
+  uploadCloudinary.array("images", 5),
+  ctrl.updateProduct
+);
+
 router.delete(
   "/:id",
   protect,
   authorizeRoles("admin"),
-  upload.array("images", 5),
   ctrl.deleteProduct
 );
 
